@@ -1,0 +1,94 @@
+# CI for Terraform Builder itself.
+#
+# Builds the static site, runs the unit tests and the browser smoke test, and
+# publishes the build as an artifact. Deployment is left commented out because
+# it needs a service connection that only your organisation can create.
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  NODE_VERSION: '20.x'
+  # Set to a sub-path (e.g. '/terraform-builder/') when hosting the site
+  # somewhere other than a domain root.
+  BASE_PATH: '/'
+
+stages:
+  - stage: build
+    displayName: Build and test
+    jobs:
+      - job: build
+        displayName: Build
+        steps:
+          - task: NodeTool@0
+            displayName: Use Node $(NODE_VERSION)
+            inputs:
+              versionSpec: $(NODE_VERSION)
+
+          - task: Cache@2
+            displayName: Cache npm
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: 'npm | "$(Agent.OS)"'
+              path: $(Pipeline.Workspace)/.npm
+
+          - script: npm ci --cache $(Pipeline.Workspace)/.npm --prefer-offline
+            displayName: Install dependencies
+
+          - script: npm run typecheck
+            displayName: Type check
+
+          - script: npm test
+            displayName: Unit tests
+
+          - script: npm run build
+            displayName: Build
+            env:
+              BASE_PATH: $(BASE_PATH)
+
+          # The smoke test drives the built site in a real browser, so it runs
+          # against the production bundle rather than the dev server.
+          - script: npx playwright install --with-deps chromium
+            displayName: Install Chromium
+
+          - script: |
+              npm run preview &
+              npx wait-on http://localhost:4173 --timeout 60000
+              npm run smoke
+            displayName: Browser smoke test
+
+          - publish: dist
+            artifact: site
+            displayName: Publish site
+
+  # Uncomment once an Azure Static Web Apps resource and its deployment token
+  # exist. Store the token as a secret variable named AZURE_STATIC_WEB_APPS_TOKEN.
+  #
+  # - stage: deploy
+  #   displayName: Deploy
+  #   dependsOn: build
+  #   condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  #   jobs:
+  #     - deployment: deploy
+  #       environment: 'terraform-builder'
+  #       strategy:
+  #         runOnce:
+  #           deploy:
+  #             steps:
+  #               - download: current
+  #                 artifact: site
+  #               - task: AzureStaticWebApp@0
+  #                 inputs:
+  #                   app_location: '$(Pipeline.Workspace)/site'
+  #                   skip_app_build: true
+  #                   azure_static_web_apps_api_token: $(AZURE_STATIC_WEB_APPS_TOKEN)

@@ -284,3 +284,34 @@ describe('validate', () => {
     expect(issues.some((issue) => issue.message.includes('cannot be placed inside'))).toBe(true);
   });
 });
+
+describe('validate and connections', () => {
+  it('does not demand a field that a drawn edge already supplies', () => {
+    const design: Design = {
+      version: 1,
+      name: 'edges',
+      packId: 'azurerm',
+      region: 'westeurope',
+      nodes: [
+        node({ id: 'rg', defId: 'azurerm_resource_group', name: 'rg-main', values: { location: 'westeurope' } }),
+        node({
+          id: 'srv',
+          defId: 'azurerm_mssql_server',
+          name: 'sqlsrv-main',
+          parentId: 'rg',
+          values: { version: '12.0', administrator_login: 'sqladmin', administrator_login_password: 'x' },
+        }),
+        node({ id: 'db', defId: 'azurerm_mssql_database', name: 'sqldb-main', values: { sku_name: 'S0' } }),
+      ],
+      edges: [{ id: 'e1', source: 'srv', target: 'db' }],
+    };
+
+    // `server_id` is never typed in; the edge provides it.
+    const withEdge = validate(design, azurePack).filter((issue) => issue.level === 'error');
+    expect(withEdge).toEqual([]);
+
+    // Remove the edge and the requirement comes back.
+    const withoutEdge = validate({ ...design, edges: [] }, azurePack);
+    expect(withoutEdge.some((issue) => issue.field === 'server_id' && issue.level === 'error')).toBe(true);
+  });
+});

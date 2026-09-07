@@ -64,25 +64,36 @@ export function autoLayout(design: Design, pack: ProviderPack): Design {
     const columns = columnsFor(kids, isContainer);
     const rows = Math.ceil(kids.length / columns);
 
-    // Uniform column widths and per-row heights keep the grid tidy.
-    const columnWidth = Math.max(...measured.map((size) => size.width));
+    // Column widths and row heights are measured independently, so one wide
+    // child does not inflate every other column.
+    const columnWidths: number[] = [];
+    for (let column = 0; column < columns; column += 1) {
+      const slice = measured.filter((_, index) => index % columns === column);
+      columnWidths.push(slice.length > 0 ? Math.max(...slice.map((size) => size.width)) : 0);
+    }
     const rowHeights: number[] = [];
     for (let row = 0; row < rows; row += 1) {
       const slice = measured.slice(row * columns, row * columns + columns);
       rowHeights.push(Math.max(...slice.map((size) => size.height)));
     }
 
+    const columnOffset = (column: number) =>
+      CONTAINER_PADDING +
+      columnWidths.slice(0, column).reduce((total, value) => total + value + GAP_X, 0);
+
     kids.forEach((kid, index) => {
       const column = index % columns;
       const row = Math.floor(index / columns);
-      const x = CONTAINER_PADDING + column * (columnWidth + GAP_X);
       const y =
         CONTAINER_HEADER +
         rowHeights.slice(0, row).reduce((total, height) => total + height + GAP_Y, 0);
-      positions.set(kid.id, { x, y });
+      positions.set(kid.id, { x: columnOffset(column), y });
     });
 
-    const width = CONTAINER_PADDING * 2 + columns * columnWidth + (columns - 1) * GAP_X;
+    const width =
+      CONTAINER_PADDING * 2 +
+      columnWidths.reduce((total, value) => total + value, 0) +
+      (columns - 1) * GAP_X;
     const height =
       CONTAINER_HEADER +
       CONTAINER_PADDING +

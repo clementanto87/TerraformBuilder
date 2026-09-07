@@ -61,7 +61,7 @@ export const customModule: ResourceDef = {
     const version = ctx.node.values.version;
     const inputs = (ctx.node.values.inputs ?? {}) as Record<string, unknown>;
 
-    const keys = Object.keys(inputs);
+    const keys = Object.keys(inputs).filter((key) => key.trim().length > 0);
     const width = Math.max(6, ...keys.map((key) => key.length), version ? 7 : 0);
     lines.push(`  ${'source'.padEnd(width)} = "${source}"`);
     if (version) lines.push(`  ${'version'.padEnd(width)} = "${String(version)}"`);
@@ -77,6 +77,7 @@ export const customModule: ResourceDef = {
       lines.push('');
       lines.push(`  tags = {`);
       for (const [key, value] of Object.entries(ctx.node.tags)) {
+        if (!key.trim()) continue;
         lines.push(`    ${key} = "${value}"`);
       }
       lines.push('  }');

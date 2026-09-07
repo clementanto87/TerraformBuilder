@@ -194,7 +194,7 @@ function sensitiveRef(ctx: GenerationContext, node: GraphNode, field: FieldDef):
  * so that an edge on the canvas is genuinely the same thing as a reference in
  * the code.
  */
-function applyConnections(ctx: GenerationContext): Map<string, Record<string, HclValue>> {
+export function connectionArguments(ctx: GenerationContext): Map<string, Record<string, HclValue>> {
   const extra = new Map<string, Record<string, HclValue>>();
 
   const put = (nodeId: string, key: string, value: HclValue, list: boolean) => {
@@ -327,9 +327,10 @@ export function emitNode(
   // Arguments contributed by drawn edges.
   for (const [key, value] of Object.entries(connectionArgs)) root.attr(key, value);
 
-  if (Object.keys(node.tags).length > 0) {
-    root.attr('tags', node.tags as unknown as HclValue);
-  }
+  const tags = Object.fromEntries(
+    Object.entries(node.tags).filter(([key]) => key.trim().length > 0),
+  );
+  if (Object.keys(tags).length > 0) root.attr('tags', tags as HclValue);
 
   for (const [name, values] of blocks) {
     const nested = block(name);
@@ -425,7 +426,7 @@ export function generate(
   options: GenerateOptions = {},
 ): GenerateResult {
   const ctx = createContext(design, pack);
-  const connections = applyConnections(ctx);
+  const connections = connectionArguments(ctx);
 
   const grouped = new Map<string, string[]>();
   for (const node of orderNodes(ctx)) {
@@ -473,7 +474,7 @@ export function generateOne(design: Design, pack: ProviderPack, nodeId: string):
   const node = ctx.nodeOf(nodeId);
   if (!node) return '';
   const def = ctx.defOf(node.defId);
-  const connections = applyConnections(ctx);
+  const connections = connectionArguments(ctx);
   const body = emitNode(ctx, node, connections.get(node.id));
   return def ? `# ${def.label}\n${body}\n` : `${body}\n`;
 }

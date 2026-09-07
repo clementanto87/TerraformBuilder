@@ -3,7 +3,7 @@
  * knows nothing about any particular provider.
  */
 
-import { createContext } from './generate';
+import { connectionArguments, createContext } from './generate';
 import {
   isNodeRef,
   type Design,
@@ -109,6 +109,7 @@ function checkContainment(
 
 export function validate(design: Design, pack: ProviderPack): ValidationIssue[] {
   const ctx = createContext(design, pack);
+  const fromEdges = connectionArguments(ctx);
   const issues: ValidationIssue[] = [];
 
   for (const node of design.nodes) {
@@ -126,16 +127,18 @@ export function validate(design: Design, pack: ProviderPack): ValidationIssue[] 
       issues.push({ level: 'error', nodeId: node.id, message: 'A resource name is required.' });
     }
 
-    // Arguments an ancestor already supplies are not the user's to fill in.
-    const inherited = new Set(
-      (def.inherits ?? [])
+    // Arguments already supplied by an ancestor on the canvas, or by an edge
+    // the user drew, are not theirs to fill in by hand.
+    const supplied = new Set([
+      ...(def.inherits ?? [])
         .filter((rule) => ctx.ancestorOf(node, rule.fromDef))
         .map((rule) => rule.key),
-    );
+      ...Object.keys(fromEdges.get(node.id) ?? {}),
+    ]);
 
     for (const field of def.fields) {
       if (!visible(field, node.values)) continue;
-      if (inherited.has(field.key) && isBlank(node.values[field.key])) continue;
+      if (supplied.has(field.key) && isBlank(node.values[field.key])) continue;
       issues.push(...checkField(node, field));
     }
 

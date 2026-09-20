@@ -27,7 +27,17 @@ You need the private key whose public half is in `~/.ssh/authorized_keys` on the
 VM — the `.pem` Azure handed you when the VM was created, or any key you have
 since added.
 
-Register the server with Claude Code:
+The repository already carries a project-scoped [`.mcp.json`](../../.mcp.json)
+that registers this server, so opening the project in Claude Code is enough —
+it will ask once whether to trust the server. Every value in it has a default
+that can be overridden from your shell without editing the committed file:
+
+```bash
+AGENT_VM_SSH_KEY=~/keys/other.pem claude   # or export it in your profile
+```
+
+To register it yourself instead — a different VM, or a user-scoped server
+available in every project:
 
 ```bash
 claude mcp add agent-vm \
@@ -37,10 +47,9 @@ claude mcp add agent-vm \
   -- node /absolute/path/to/TerraformBuilder/mcp/agent-vm/server.mjs
 ```
 
-Or commit a project-scoped `.mcp.json` at the repository root — `mcp.json.example`
-in this directory is that file, with the paths left for you to fill in.
-
-Check it came up with `/mcp` in Claude Code, then ask it to run `vm_info`.
+Either way, `npm install` in this directory has to have run first — the server
+needs its dependencies on disk. Check it came up with `/mcp` in Claude Code,
+then ask it to run `vm_info`.
 
 ### Configuration
 

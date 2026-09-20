@@ -65,7 +65,13 @@ configuration rather than pretending to read your state file.
 machine over SSH — `run_command`, file read/write, upload and download. Pointed
 at a build VM, it turns an export from this tool into `terraform init` and
 `terraform plan` run on a box that holds the Azure credentials, while the
-browser app still holds none. See `mcp/agent-vm/README.md`.
+browser app still holds none.
+
+`.mcp.json` at the repository root registers it for Claude Code; `npm install`
+inside `mcp/agent-vm` and a private key on your machine are the only setup. Host,
+user, port and key path all read from your environment first, so nobody has to
+edit the committed file to point it at their own machine. See
+`mcp/agent-vm/README.md`.
 
 ## Adding resources, providers and your own modules
 

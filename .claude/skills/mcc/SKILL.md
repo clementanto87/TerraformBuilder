@@ -31,6 +31,29 @@ mean.
 The connection details live in `.mcp.json` at the repository root; the private
 key stays on the user's machine at the path `AGENT_VM_SSH_KEY` names.
 
+## Where this works
+
+These instructions travel anywhere the skill is installed. The connection does
+not. The agent-vm tools are a local process holding the user's private key, so
+they exist only in a session running on a machine that has that key and a route
+to port 22 — in practice, the user's own computer.
+
+So when the tools are absent — a phone, a cloud session, a borrowed machine —
+say so in one line instead of improvising: nothing available here can reach the
+VM. Then offer what still helps from where you are:
+
+- Write or fix the Terraform in the repo, ready to run the moment they are back
+  at a machine that can connect.
+- Hand them the exact commands to paste, rather than a description of them.
+- Point at the Azure portal for anything that is control-plane rather than
+  shell — starting a stopped VM, opening an NSG rule, reading the current
+  public IP — which they can do from the Azure mobile app.
+
+Reaching the machine from a phone would mean running an MCP server on the VM
+itself and exposing it over HTTPS as a remote connector. That is a real change
+with real exposure, not a setting to flip; raise it as an option rather than
+attempting it.
+
 ## Start with vm_info
 
 Call `vm_info` before the first real command of a session. It costs one round

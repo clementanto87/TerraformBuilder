@@ -1,7 +1,8 @@
 ---
 name: mcc
 description: >-
-  MCC is "my cloud computer" — the user's Azure VM (agent-vm). Connect to it over
+  MCC is "my cloud computer" — the user's Hetzner Cloud VM (hetzner-agent-vm).
+  Connect to it over
   SSH through the agent-vm MCP server and work on it: run commands, read and
   write files, upload and download, run Terraform, tail logs, check what is
   installed. Use this whenever the user says "mcc" or "my cloud computer", or
@@ -14,11 +15,17 @@ description: >-
 
 # mcc — my cloud computer
 
-"My cloud computer" is the user's Azure VM, `agent-vm`, reached through the
-agent-vm MCP server in this repository (`mcp/agent-vm/`). The server holds an
-SSH connection to it, so work happens on that machine rather than in this
-session's container. When the user says "my cloud computer", this is what they
-mean.
+"My cloud computer" is the user's Hetzner Cloud VM, `hetzner-agent-vm` at
+49.13.196.104 — a 2 vCPU / 4 GB CX22 in Nuremberg running Ubuntu 24.04, logged
+into as `root`. It is reached through the agent-vm MCP server in this repository
+(`mcp/agent-vm/`), which holds an SSH connection to it, so work happens on that
+machine rather than in this session's container. When the user says "my cloud
+computer", this is what they mean.
+
+It is a small box: 4 GB of RAM and 2 cores, shared with whatever Docker
+containers are already running. Parallel builds and test suites are the things
+most likely to end in an OOM kill, so prefer one job at a time and check
+`free -h` before starting something heavy.
 
 | Tool | Use it for |
 | --- | --- |
@@ -45,9 +52,10 @@ VM. Then offer what still helps from where you are:
 - Write or fix the Terraform in the repo, ready to run the moment they are back
   at a machine that can connect.
 - Hand them the exact commands to paste, rather than a description of them.
-- Point at the Azure portal for anything that is control-plane rather than
-  shell — starting a stopped VM, opening an NSG rule, reading the current
-  public IP — which they can do from the Azure mobile app.
+- Point at the Hetzner Cloud console (console.hetzner.cloud, which works from a
+  phone browser) for anything that is control-plane rather than shell — powering
+  the server back on, opening a firewall rule, or using the web console when SSH
+  itself is what is broken.
 
 Reaching the machine from a phone would mean running an MCP server on the VM
 itself and exposing it over HTTPS as a remote connector. That is a real change
@@ -110,13 +118,17 @@ than writing each file.
 ## Running Terraform there
 
 This repository generates Terraform; the VM is where it can actually run,
-because the VM is what holds Azure credentials (a managed identity, or a prior
-`az login`). Nothing in the browser app ever does.
+because the VM is what holds the cloud credentials. Nothing in the browser app
+ever does. The machine is at Hetzner while the Terraform targets Azure, so there
+is no managed identity to lean on — authentication is whatever is on the box, an
+`az login` for interactive work or a service principal's environment variables
+for unattended runs. If `terraform plan` fails on authentication, that is the
+first thing to check rather than the code.
 
 A normal pass:
 
 1. Get the code up — `upload_file` a zipped export, or `write_remote_file` each
-   `.tf` file into a working directory such as `/home/azureuser/infra`.
+   `.tf` file into a working directory such as `/root/infra`.
 2. `run_command` with `cwd` set to that directory: `terraform init`, then
    `terraform plan -no-color -out=tfplan`.
 3. Read the plan back to the user before applying. Applying real infrastructure
@@ -134,15 +146,16 @@ recognising.
 
 | What you see | What it usually is |
 | --- | --- |
-| Timed out reaching the host | The network security group is not allowing inbound TCP 22 from this address. The user has to open it in the Azure portal — you cannot fix it from here. |
-| All configured authentication methods failed | Wrong `AGENT_VM_USER` (Azure Ubuntu images use `azureuser`), or a key that was never added to the VM's `authorized_keys`. |
+| Timed out reaching the host | A firewall is dropping it, at either of two layers: the Hetzner Cloud Firewall attached to the server, or `ufw` on the machine. The user fixes the first in the Hetzner console; you cannot fix either from here if SSH itself is down. |
+| All configured authentication methods failed | Wrong `AGENT_VM_USER` (this machine logs in as `root`), or a key that was never added to `/root/.ssh/authorized_keys`. |
 | Cannot read the SSH key … ENOENT | `AGENT_VM_SSH_KEY` points somewhere that does not exist on the user's machine. |
 | Host key mismatch | The VM was rebuilt and got a new host key, or the IP now belongs to something else. Do not work around this — tell the user, and let them confirm before the pin is updated. |
 | The tools are not available at all | The MCP server is not connected. Ask the user to check `/mcp`; setup is in `mcp/agent-vm/README.md`, and it needs `npm install` inside `mcp/agent-vm` first. |
 
-A public IP changes when the VM is deallocated and restarted, so an address
-that worked last week may simply be stale — worth suggesting before deeper
-debugging.
+A Hetzner server keeps its IPv4 address for as long as it exists, so a stale
+address means the server was rebuilt rather than merely restarted — which the
+host key mismatch above would also show. The machine also has IPv6
+(2a01:4f8:1c16:8271::1), usable if v4 is ever the problem.
 
 ## Judgement
 

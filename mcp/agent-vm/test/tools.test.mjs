@@ -26,7 +26,7 @@ async function harness({ onExec, files, overrides = {} } = {}) {
   const vm = new Vm({
     host: '127.0.0.1',
     port: fakeVm.port,
-    user: 'azureuser',
+    user: 'root',
     privateKeyPath: keyPath,
     passphrase: undefined,
     expectedFingerprint: null,
@@ -155,14 +155,14 @@ test('write_remote_file creates parents and writes the bytes', async () => {
     },
   });
   const { text, isError } = await call('write_remote_file', {
-    path: '/home/azureuser/infra/main.tf',
+    path: '/root/infra/main.tf',
     content: 'resource "azurerm_resource_group" "rg" {}\n',
     mode: '640',
   });
   assert.equal(isError, false);
-  assert.match(text, /Wrote 42 bytes to \/home\/azureuser\/infra\/main\.tf \(mode 640\)/);
-  assert.equal(fakeVm.read('/home/azureuser/infra/main.tf'), 'resource "azurerm_resource_group" "rg" {}\n');
-  assert.deepEqual(commands, [`mkdir -p -- "$(dirname '/home/azureuser/infra/main.tf')"`]);
+  assert.match(text, /Wrote 42 bytes to \/root\/infra\/main\.tf \(mode 640\)/);
+  assert.equal(fakeVm.read('/root/infra/main.tf'), 'resource "azurerm_resource_group" "rg" {}\n');
+  assert.deepEqual(commands, [`mkdir -p -- "$(dirname '/root/infra/main.tf')"`]);
 });
 
 test('write_remote_file surfaces a failing mkdir', async () => {
@@ -175,17 +175,17 @@ test('write_remote_file surfaces a failing mkdir', async () => {
 
 test('list_directory hides dotfiles unless asked', async () => {
   const files = {
-    '/home/azureuser': { directory: true },
-    '/home/azureuser/main.tf': 'x',
-    '/home/azureuser/.bashrc': 'y',
+    '/root': { directory: true },
+    '/root/main.tf': 'x',
+    '/root/.bashrc': 'y',
   };
   const { call } = await harness({ files });
-  const plain = await call('list_directory', { path: '/home/azureuser' });
+  const plain = await call('list_directory', { path: '/root' });
   assert.match(plain.text, /1 entries/);
   assert.match(plain.text, /main\.tf/);
   assert.ok(!plain.text.includes('.bashrc'));
 
-  const hidden = await call('list_directory', { path: '/home/azureuser', include_hidden: true });
+  const hidden = await call('list_directory', { path: '/root', include_hidden: true });
   assert.match(hidden.text, /\.bashrc/);
 });
 
@@ -196,15 +196,15 @@ test('upload_file and download_file round-trip a file', async () => {
 
   const upload = await call('upload_file', {
     local_path: localSource,
-    remote_path: '/home/azureuser/plan.tfplan',
+    remote_path: '/root/plan.tfplan',
     mode: '600',
   });
   assert.equal(upload.isError, false);
-  assert.equal(fakeVm.read('/home/azureuser/plan.tfplan'), 'binary-ish plan');
+  assert.equal(fakeVm.read('/root/plan.tfplan'), 'binary-ish plan');
 
   const localTarget = join(workspace, 'nested', 'copy.tfplan');
   const download = await call('download_file', {
-    remote_path: '/home/azureuser/plan.tfplan',
+    remote_path: '/root/plan.tfplan',
     local_path: localTarget,
   });
   assert.equal(download.isError, false);
@@ -225,7 +225,7 @@ test('vm_info reports the connection and the host key fingerprint', async () => 
   const { call } = await harness({ onExec: async () => ({ stdout: 'hostname:  agent-vm\n', code: 0 }) });
   const { text, isError } = await call('vm_info');
   assert.equal(isError, false);
-  assert.match(text, /connected: azureuser@127\.0\.0\.1:\d+/);
+  assert.match(text, /connected: root@127\.0\.0\.1:\d+/);
   assert.match(text, /host key:  SHA256:[A-Za-z0-9+/]+/);
   assert.match(text, /hostname:  agent-vm/);
 });

@@ -51,14 +51,16 @@ function describeConnectError(error, config) {
   }
   if (code === 'ETIMEDOUT' || /timed out/i.test(message)) {
     return (
-      `Timed out reaching ${config.host}:${config.port}. In Azure this is almost always the network security ` +
-      `group: allow inbound TCP ${config.port} from your address on the VM's NSG.`
+      `Timed out reaching ${config.host}:${config.port}. This is almost always a firewall: check the cloud ` +
+      `provider's own rules (a Hetzner Cloud Firewall, an Azure NSG, an AWS security group) and the VM's ` +
+      `local ufw, and allow inbound TCP ${config.port} from your address.`
     );
   }
   if (/All configured authentication methods failed/i.test(message)) {
     return (
       `${config.user}@${config.host} rejected the key at ${config.privateKeyPath}. ` +
-      `Check AGENT_VM_USER (Azure images usually use "azureuser") and that this key's public half is in ` +
+      `Check AGENT_VM_USER (Hetzner images log in as "root", Azure images as "azureuser") and that this ` +
+      `key's public half is in ` +
       `~/.ssh/authorized_keys on the VM.`
     );
   }

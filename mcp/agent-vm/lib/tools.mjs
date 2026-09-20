@@ -96,7 +96,7 @@ export function registerTools(server, vm) {
         'calls — use `cwd` instead. Long jobs should be started detached (nohup ... > log 2>&1 &) and polled.',
       inputSchema: {
         command: z.string().min(1).describe('Shell command to run, e.g. "terraform plan -no-color"'),
-        cwd: z.string().optional().describe('Absolute directory to run in, e.g. "/home/azureuser/infra"'),
+        cwd: z.string().optional().describe('Absolute directory to run in, e.g. "/root/infra"'),
         stdin: z.string().optional().describe('Text piped to the command on stdin'),
         timeout_seconds: z
           .number()

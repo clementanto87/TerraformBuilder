@@ -6,9 +6,9 @@ export class ConfigError extends Error {}
 const SETUP_HINT = `
 Set these in the MCP server's env block (see mcp/agent-vm/README.md):
 
-  AGENT_VM_HOST      public IP or DNS name of the VM   e.g. 52.143.63.207
-  AGENT_VM_USER      the login user                    e.g. azureuser
-  AGENT_VM_SSH_KEY   path to the private key file      e.g. ~/.ssh/agent-vm.pem
+  AGENT_VM_HOST      public IP or DNS name of the VM   e.g. 49.13.196.104
+  AGENT_VM_USER      the login user                    e.g. root
+  AGENT_VM_SSH_KEY   path to the private key file      e.g. ~/.ssh/id_ed25519
 
 Optional:
 

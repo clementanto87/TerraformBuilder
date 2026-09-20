@@ -1,8 +1,8 @@
 # agent-vm MCP server
 
-An MCP server that gives an assistant a shell on a remote VM over SSH. It was
-written against `agent-vm` in `rg-agent-sandbox-we` (Ubuntu 24.04, West Europe),
-but nothing in it is Azure-specific — point it at any host you can SSH into.
+An MCP server that gives an assistant a shell on a remote VM over SSH. It is
+configured for `hetzner-agent-vm` (Hetzner Cloud CX22, Ubuntu 24.04, Nuremberg),
+but nothing in it is provider-specific — point it at any host you can SSH into.
 
 Seven tools:
 
@@ -24,7 +24,7 @@ npm install
 ```
 
 You need the private key whose public half is in `~/.ssh/authorized_keys` on the
-VM — the `.pem` Azure handed you when the VM was created, or any key you have
+VM — the key Hetzner installed when the server was created, or any key you have
 since added.
 
 The repository already carries a project-scoped [`.mcp.json`](../../.mcp.json)
@@ -41,9 +41,9 @@ available in every project:
 
 ```bash
 claude mcp add agent-vm \
-  --env AGENT_VM_HOST=52.143.63.207 \
-  --env AGENT_VM_USER=azureuser \
-  --env AGENT_VM_SSH_KEY=~/.ssh/agent-vm.pem \
+  --env AGENT_VM_HOST=49.13.196.104 \
+  --env AGENT_VM_USER=root \
+  --env AGENT_VM_SSH_KEY=~/.ssh/id_ed25519 \
   -- node /absolute/path/to/TerraformBuilder/mcp/agent-vm/server.mjs
 ```
 
@@ -55,8 +55,8 @@ then ask it to run `vm_info`.
 
 | Variable | Required | Default | Notes |
 | --- | --- | --- | --- |
-| `AGENT_VM_HOST` | yes | — | Public IP or DNS name, e.g. `52.143.63.207` |
-| `AGENT_VM_USER` | yes | — | Login user; Azure Ubuntu images normally use `azureuser` |
+| `AGENT_VM_HOST` | yes | — | Public IP or DNS name, e.g. `49.13.196.104` |
+| `AGENT_VM_USER` | yes | — | Login user; Hetzner images log in as `root`, Azure images as `azureuser` |
 | `AGENT_VM_SSH_KEY` | yes | — | Path to the **private** key file; `~` is expanded |
 | `AGENT_VM_PORT` | no | `22` | |
 | `AGENT_VM_SSH_KEY_PASSPHRASE` | no | — | If the key is encrypted |
@@ -76,20 +76,21 @@ taken over that IP would be trusted too. `vm_info` prints the fingerprint it
 saw; to pin it, copy that value into the env block, or read it independently:
 
 ```bash
-ssh-keyscan -t ed25519 52.143.63.207 | ssh-keygen -lf - # prints "256 SHA256:… "
+ssh-keyscan -t ed25519 49.13.196.104 | ssh-keygen -lf - # prints "256 SHA256:… "
 ```
 
 A rebuilt VM gets a new host key, so expect to update the pin after a redeploy.
 
 ## If it cannot connect
 
-The error messages name the likely cause. The two common ones on Azure:
+The error messages name the likely cause. The two common ones:
 
-- **Timed out** — the network security group is not allowing inbound TCP 22 from
-  your address. `agent-vm`'s NSG is on the `agent-vmVMNic`/subnet in the portal.
+- **Timed out** — a firewall is dropping the connection. Check both layers: the
+  Hetzner Cloud Firewall attached to the server in the console, and `ufw` on the
+  machine itself. Either one closing port 22 looks identical from here.
 - **All configured authentication methods failed** — usually the wrong
-  `AGENT_VM_USER`, or a key that was never added to the VM. Azure Ubuntu images
-  default to `azureuser`, not `root` or your local username.
+  `AGENT_VM_USER`, or a key that was never added to the VM. Hetzner Ubuntu
+  images log in as `root`; Azure images use `azureuser`.
 
 ## Using it with Terraform Builder
 
@@ -98,14 +99,17 @@ Terraform Builder exports a repository (`providers.tf`, `main.tf`,
 in place, that export can go straight onto the VM and run there:
 
 1. `upload_file` the exported zip, or `write_remote_file` each `.tf` file into
-   `/home/azureuser/infra`.
-2. `run_command` with `cwd: /home/azureuser/infra` for `terraform init` and
+   `/root/infra`.
+2. `run_command` with `cwd: /root/infra` for `terraform init` and
    `terraform plan -no-color`.
 3. `download_file` the plan output if you want it back locally.
 
-The VM holds the Azure credentials (a managed identity, or `az login`), so the
-browser app still never sees one. Plans that take longer than the timeout should
-be started detached and polled:
+The VM holds the cloud credentials, so the browser app still never sees one.
+Note that this VM is at Hetzner, not Azure, so there is no managed identity to
+fall back on: `terraform` there authenticates with whatever you put on the box —
+`az login` for a person, or a service principal's environment variables for
+unattended runs. Plans that take longer than the timeout should be started
+detached and polled:
 
 ```
 nohup terraform apply -auto-approve -no-color > apply.log 2>&1 &

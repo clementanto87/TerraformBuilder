@@ -59,6 +59,14 @@ Applying is the pipeline's job, not this tool's. Nothing here holds an Azure
 credential or runs `terraform apply`, and the State tab explains the backend
 configuration rather than pretending to read your state file.
 
+## Running the generated code on a VM
+
+`mcp/agent-vm` is an MCP server that gives an assistant a shell on a remote
+machine over SSH — `run_command`, file read/write, upload and download. Pointed
+at a build VM, it turns an export from this tool into `terraform init` and
+`terraform plan` run on a box that holds the Azure credentials, while the
+browser app still holds none. See `mcp/agent-vm/README.md`.
+
 ## Adding resources, providers and your own modules
 
 The engine in `src/core` does not know that Azure exists. A provider is data — a
@@ -121,6 +129,7 @@ src/core/      Provider-agnostic engine — no cloud named anywhere in here
 src/packs/     Provider data (Azure today) and starter templates
 src/components/ UI
 src/store/     Application state
+mcp/agent-vm/  MCP server for running the generated code on a remote VM
 ```
 
 ## Tests

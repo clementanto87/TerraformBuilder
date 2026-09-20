@@ -1,0 +1,19 @@
+{
+  "name": "agent-vm-mcp",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "MCP server that gives an assistant a shell on a remote VM over SSH.",
+  "bin": {
+    "agent-vm-mcp": "./server.mjs"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "ssh2": "^1.17.0",
+    "zod": "^4.6.5"
+  }
+}

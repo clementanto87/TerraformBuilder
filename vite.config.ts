@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import { fileURLToPath, URL } from 'node:url';
 
@@ -14,5 +14,9 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     chunkSizeWarningLimit: 900,
+  },
+  test: {
+    // mcp/ is a separate package with its own node:test suite (npm test in that folder).
+    exclude: ['**/node_modules/**', '**/dist/**', 'mcp/**'],
   },
 });

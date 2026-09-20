@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "agent-vm": {
+      "command": "node",
+      "args": ["/absolute/path/to/TerraformBuilder/mcp/agent-vm/server.mjs"],
+      "env": {
+        "AGENT_VM_HOST": "52.143.63.207",
+        "AGENT_VM_USER": "azureuser",
+        "AGENT_VM_SSH_KEY": "~/.ssh/agent-vm.pem"
+      }
+    }
+  }
+}

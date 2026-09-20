@@ -73,9 +73,10 @@ user, port and key path all read from your environment first, so nobody has to
 edit the committed file to point it at their own machine. See
 `mcp/agent-vm/README.md`.
 
-Alongside it, `.claude/skills/mcc` teaches Claude how to use that connection
-well — check the machine first, keep long jobs detached, run Terraform from a
-working directory on the VM, and recognise the usual connection failures.
+Alongside it, `.claude/skills/mcc` ("my cloud computer") teaches Claude how to
+use that connection well: check the machine first, keep long jobs detached, run
+Terraform from a working directory on the VM, and recognise the usual connection
+failures.
 
 ## Adding resources, providers and your own modules
 

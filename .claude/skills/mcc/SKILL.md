@@ -1,21 +1,24 @@
 ---
 name: mcc
 description: >-
-  Connect to the Azure sandbox VM (agent-vm) over SSH through the agent-vm MCP
-  server and work on it — run commands, read and write files, upload and
-  download, run Terraform, tail logs, check what is installed. Use this whenever
-  the user says "mcc", or asks to connect to, log into, SSH into or check on
-  "the VM", "my VM", "the cloud VM", "the sandbox" or "the box"; whenever they
-  want something run, installed, deployed, copied or debugged on that machine;
-  and whenever they ask for a Terraform plan or apply to happen somewhere other
-  than their laptop, even if they never name the VM.
+  MCC is "my cloud computer" — the user's Azure VM (agent-vm). Connect to it over
+  SSH through the agent-vm MCP server and work on it: run commands, read and
+  write files, upload and download, run Terraform, tail logs, check what is
+  installed. Use this whenever the user says "mcc" or "my cloud computer", or
+  asks to connect to, log into, SSH into or check on "my cloud machine", "the
+  VM", "my VM", "the cloud VM", "the sandbox" or "the box"; whenever they want
+  something run, installed, deployed, copied or debugged over there rather than
+  locally; and whenever they ask for a Terraform plan or apply to happen
+  somewhere other than their laptop, even if they never name the machine.
 ---
 
-# mcc — working on the cloud VM
+# mcc — my cloud computer
 
-`mcc` is the agent-vm MCP server in this repository (`mcp/agent-vm/`). It holds
-an SSH connection to the user's Azure VM, so work happens on that machine rather
-than in this session's container.
+"My cloud computer" is the user's Azure VM, `agent-vm`, reached through the
+agent-vm MCP server in this repository (`mcp/agent-vm/`). The server holds an
+SSH connection to it, so work happens on that machine rather than in this
+session's container. When the user says "my cloud computer", this is what they
+mean.
 
 | Tool | Use it for |
 | --- | --- |
